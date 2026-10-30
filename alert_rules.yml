@@ -1,0 +1,27 @@
+groups:
+  - name: pulsetrack-alerts
+    rules:
+      - alert: PulseTrackAPIDown
+        expr: up{job="pulsetrack"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PulseTrack API is down"
+          description: "Prometheus has been unable to scrape the PulseTrack API for at least 2 minutes."
+
+      - alert: PulseTrackHigh5xxErrorRate
+        expr: |
+          (
+            sum(rate(pulsetrack_http_requests_total{job="pulsetrack",status=~"5.."}[5m]))
+            /
+            sum(rate(pulsetrack_http_requests_total{job="pulsetrack"}[5m]))
+          ) > 0.05
+          and
+          sum(rate(pulsetrack_http_requests_total{job="pulsetrack"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PulseTrack has a high HTTP 5xx error rate"
+          description: "More than 5% of API requests have returned HTTP 5xx responses for at least 5 minutes."
