@@ -1,4 +1,7 @@
-# Go Event Analytics API --- BUILD MODE Master Prompt
+# PulseTrack – Go Event Analytics API - Part 1
+
+GitHub repository:
+https://github.com/san-sp/Golang_Event_Analytics_API_Practice
 
 ## Role and mission
 
@@ -28,26 +31,26 @@ rather than turning every step into a long lecture.
 Use these choices consistently unless there is a strong reason to change
 them and you explain why first:
 
--   **Language:** Go, using the installed/current stable Go version.
--   **HTTP framework:** Gin.
--   **Database:** MongoDB.
--   **Database driver:** official MongoDB Go driver, using a current
-    stable compatible version.
--   **Validation:** request DTOs with explicit validation and clear
-    domain validation. Avoid unnecessary validation frameworks.
--   **Authentication / tenant isolation:** API keys for service/client
-    ingestion, stored as secure hashes in MongoDB or configuration as
-    appropriate; never store or log raw API keys. Use a separate,
-    clearly documented administrative access mechanism only if admin
-    endpoints are included.
--   **Configuration:** environment variables with startup validation.
-    `.env` only for local development; never commit secrets.
--   **Logging:** Go `log/slog` structured logging.
--   **Testing:** standard Go `testing`, `httptest`, and a repeatable
-    MongoDB integration-test setup.
--   **Containers:** Docker and Docker Compose.
--   **Version control:** Git and GitHub-ready commits.
--   **Documentation:** OpenAPI YAML and a practical README.
+- **Language:** Go, using the installed/current stable Go version.
+- **HTTP framework:** Gin.
+- **Database:** MongoDB.
+- **Database driver:** official MongoDB Go driver, using a current
+  stable compatible version.
+- **Validation:** request DTOs with explicit validation and clear
+  domain validation. Avoid unnecessary validation frameworks.
+- **Authentication / tenant isolation:** API keys for service/client
+  ingestion, stored as secure hashes in MongoDB or configuration as
+  appropriate; never store or log raw API keys. Use a separate,
+  clearly documented administrative access mechanism only if admin
+  endpoints are included.
+- **Configuration:** environment variables with startup validation.
+  `.env` only for local development; never commit secrets.
+- **Logging:** Go `log/slog` structured logging.
+- **Testing:** standard Go `testing`, `httptest`, and a repeatable
+  MongoDB integration-test setup.
+- **Containers:** Docker and Docker Compose.
+- **Version control:** Git and GitHub-ready commits.
+- **Documentation:** OpenAPI YAML and a practical README.
 
 Use Go's standard library where practical. Keep this as one **modular
 monolith**: one API process and one MongoDB database.
@@ -85,21 +88,21 @@ unauthenticated public endpoint in a deployed server.
 
 ### A. Project foundation
 
--   clear package layout with responsibilities explained
--   configuration parsing and startup validation
--   MongoDB client setup, connection timeout, ping, and graceful
-    disconnect
--   structured logging and request ID
--   sensible HTTP server timeouts and graceful shutdown
--   `/healthz` and `/readyz` endpoints
--   consistent JSON error responses
--   request body size limits and validation
--   `.gitignore`, `.env.example`, Dockerfile, Compose file, README, and
-    OpenAPI
--   indexes created through an explicit, repeatable
-    initialization/migration-style process
--   document which health endpoint checks process health and which
-    checks MongoDB readiness
+- clear package layout with responsibilities explained
+- configuration parsing and startup validation
+- MongoDB client setup, connection timeout, ping, and graceful
+  disconnect
+- structured logging and request ID
+- sensible HTTP server timeouts and graceful shutdown
+- `/healthz` and `/readyz` endpoints
+- consistent JSON error responses
+- request body size limits and validation
+- `.gitignore`, `.env.example`, Dockerfile, Compose file, README, and
+  OpenAPI
+- indexes created through an explicit, repeatable
+  initialization/migration-style process
+- document which health endpoint checks process health and which
+  checks MongoDB readiness
 
 ### B. Data model and MongoDB design
 
@@ -131,20 +134,20 @@ documented.
 
 ### C. Tenant API-key authentication
 
--   validate an API key on protected ingestion/query routes
--   keep raw API keys out of database storage and logs; store a
-    cryptographic hash and compare safely
--   support key rotation/revocation if the scope can remain manageable
--   attach the trusted tenant ID and key permissions to request context
-    after validation
--   reject missing, malformed, invalid, revoked, or expired keys
-    consistently
--   ensure every database query includes the authenticated tenant scope
--   do not let the request body, URL, or headers override trusted tenant
-    context
--   never log API keys or sensitive event payloads
--   keep error responses useful but avoid revealing whether a key or
-    tenant exists
+- validate an API key on protected ingestion/query routes
+- keep raw API keys out of database storage and logs; store a
+  cryptographic hash and compare safely
+- support key rotation/revocation if the scope can remain manageable
+- attach the trusted tenant ID and key permissions to request context
+  after validation
+- reject missing, malformed, invalid, revoked, or expired keys
+  consistently
+- ensure every database query includes the authenticated tenant scope
+- do not let the request body, URL, or headers override trusted tenant
+  context
+- never log API keys or sensitive event payloads
+- keep error responses useful but avoid revealing whether a key or
+  tenant exists
 
 If implementing API-key provisioning, make the key visible only at
 creation time and persist only its hash. Keep provisioning
@@ -153,46 +156,46 @@ public endpoint that can mint keys.
 
 ### D. Event ingestion
 
--   `POST /api/v1/events` for a single event
--   `POST /api/v1/events/batch` for batch ingestion
--   validate event name, timestamp, optional identifiers, and properties
--   server stamps `received_at`
--   tenant ID always comes from authenticated context
--   enforce maximum request size, maximum batch size, maximum properties
-    size, and reasonable string lengths
--   use ordered/unordered bulk-write behavior deliberately and explain
-    its consequences
--   return a clear summary of accepted/rejected items or use an
-    all-or-nothing policy; choose one contract and test it
--   ensure partial batch failures are clearly represented if partial
-    success is supported
--   protect against duplicate ingestion with a tenant-scoped
-    idempotency/event key only if it can be implemented clearly and
-    tested; document retention/uniqueness behavior
--   avoid accepting arbitrary MongoDB operators or client-supplied
-    document structures that can alter query behavior
+- `POST /api/v1/events` for a single event
+- `POST /api/v1/events/batch` for batch ingestion
+- validate event name, timestamp, optional identifiers, and properties
+- server stamps `received_at`
+- tenant ID always comes from authenticated context
+- enforce maximum request size, maximum batch size, maximum properties
+  size, and reasonable string lengths
+- use ordered/unordered bulk-write behavior deliberately and explain
+  its consequences
+- return a clear summary of accepted/rejected items or use an
+  all-or-nothing policy; choose one contract and test it
+- ensure partial batch failures are clearly represented if partial
+  success is supported
+- protect against duplicate ingestion with a tenant-scoped
+  idempotency/event key only if it can be implemented clearly and
+  tested; document retention/uniqueness behavior
+- avoid accepting arbitrary MongoDB operators or client-supplied
+  document structures that can alter query behavior
 
 Keep ingestion efficient but understandable. Do not add a queue or
 background worker for this version.
 
 ### E. Event query API
 
--   list/search events for the authenticated tenant
--   filter by event name, actor/user ID, session ID, and timestamp range
-    where appropriate
--   pagination with stable ordering and a safe maximum page size
--   use a deterministic tie-breaker for events sharing the same
-    timestamp
--   choose and document offset pagination or cursor pagination. Prefer
-    cursor pagination if it can be explained and implemented cleanly;
-    otherwise use page/limit with clear performance limitations.
--   validate timestamp ranges and reject invalid or excessively wide
-    ranges if needed
--   prevent cross-tenant queries in every path
--   do not pass client-provided MongoDB filter documents directly to the
-    driver
--   construct query filters from validated allowlisted fields
--   return pagination metadata consistently
+- list/search events for the authenticated tenant
+- filter by event name, actor/user ID, session ID, and timestamp range
+  where appropriate
+- pagination with stable ordering and a safe maximum page size
+- use a deterministic tie-breaker for events sharing the same
+  timestamp
+- choose and document offset pagination or cursor pagination. Prefer
+  cursor pagination if it can be explained and implemented cleanly;
+  otherwise use page/limit with clear performance limitations.
+- validate timestamp ranges and reject invalid or excessively wide
+  ranges if needed
+- prevent cross-tenant queries in every path
+- do not pass client-provided MongoDB filter documents directly to the
+  driver
+- construct query filters from validated allowlisted fields
+- return pagination metadata consistently
 
 ### F. Analytics aggregation API
 
@@ -212,20 +215,20 @@ output.
 
 ### G. Security and reliability
 
--   input validation and body-size limits
--   trusted tenant context and tenant isolation on every protected route
--   consistent error mapping for validation, authentication, conflict,
-    database timeout, and internal errors
--   request IDs and structured logs without secrets or raw sensitive
-    event payloads
--   database operation timeouts using context deadlines
--   graceful shutdown
--   avoid leaking internal MongoDB errors to clients
--   prevent unbounded batch requests and expensive analytics queries
--   use server-side field allowlists and avoid mass assignment
--   configure TLS at deployment boundaries and document expectations
--   avoid claiming full compliance or production readiness without
-    evidence
+- input validation and body-size limits
+- trusted tenant context and tenant isolation on every protected route
+- consistent error mapping for validation, authentication, conflict,
+  database timeout, and internal errors
+- request IDs and structured logs without secrets or raw sensitive
+  event payloads
+- database operation timeouts using context deadlines
+- graceful shutdown
+- avoid leaking internal MongoDB errors to clients
+- prevent unbounded batch requests and expensive analytics queries
+- use server-side field allowlists and avoid mass assignment
+- configure TLS at deployment boundaries and document expectations
+- avoid claiming full compliance or production readiness without
+  evidence
 
 Do not build a custom rate limiter unless it is simple, correct, and
 justified without Redis. If rate limiting is deferred, document it as a
@@ -253,28 +256,28 @@ actual output.
 
 ### I. Docker, Git, and documentation
 
--   multi-stage Dockerfile and non-root runtime user where practical
--   Compose for API and MongoDB with a persistent local volume
--   MongoDB readiness and API startup behavior
--   indexes initialized through a repeatable documented process
--   no secrets baked into the image or committed
--   README with setup, environment variables, key provisioning for local
-    development, run/test commands, example requests, architecture,
-    index design, and limitations
--   OpenAPI YAML for endpoints, schemas, auth, errors, pagination, and
-    analytics results
--   meaningful small Git commits after verified milestones
--   inspect `git status` before changes and never overwrite existing
-    user work
--   do not claim to execute Git commands unless the environment actually
-    permits it
+- multi-stage Dockerfile and non-root runtime user where practical
+- Compose for API and MongoDB with a persistent local volume
+- MongoDB readiness and API startup behavior
+- indexes initialized through a repeatable documented process
+- no secrets baked into the image or committed
+- README with setup, environment variables, key provisioning for local
+  development, run/test commands, example requests, architecture,
+  index design, and limitations
+- OpenAPI YAML for endpoints, schemas, auth, errors, pagination, and
+  analytics results
+- meaningful small Git commits after verified milestones
+- inspect `git status` before changes and never overwrite existing
+  user work
+- do not claim to execute Git commands unless the environment actually
+  permits it
 
 ## 4. Suggested package layout
 
 Treat this as a starting point, not a requirement to create empty
 folders:
 
-``` text
+```text
 pulsetrack/
 ├── cmd/api/main.go
 ├── cmd/devkey/main.go          # optional local-only API-key provisioning command
@@ -335,12 +338,12 @@ status codes.
 
 Use one consistent JSON error format, for example:
 
-``` json
+```json
 {
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "The request contains invalid fields",
-    "details": {"event_name": "is required"},
+    "details": { "event_name": "is required" },
     "request_id": "..."
   }
 }
@@ -356,23 +359,23 @@ MongoDB errors, stack traces, API keys, secrets, or sensitive payloads.
 Every logical implementation code unit must have a unique, globally
 sequential number: `Step: 1`, `Step: 2`, `Step: 3`, and so on.
 
--   One counter for the entire project, not one per file, folder, phase,
-    feature, test, Docker file, migration/index setup, or documentation
-    task.
--   If Step 14 is the last completed unit, the next new unit is Step 15,
-    even in another package.
--   Never reuse, skip, reset, or guess a number.
--   One step is one small logical code unit, such as a file or bounded
-    section. Do not number every line.
--   Use headings such as
-    `Step: 14 — Add event ingestion request validation`.
--   Where safe, add an in-code comment such as
-    `// Step 14: Validate incoming event payloads.` Do not corrupt
-    JSON/YAML or other syntax to force comments into it.
--   Check `docs/BUILD_PROGRESS.md` and the last confirmed conversation
-    step before starting new work.
--   The ledger must record the last completed step and the next
-    available step. If uncertain, inspect or ask rather than guessing.
+- One counter for the entire project, not one per file, folder, phase,
+  feature, test, Docker file, migration/index setup, or documentation
+  task.
+- If Step 14 is the last completed unit, the next new unit is Step 15,
+  even in another package.
+- Never reuse, skip, reset, or guess a number.
+- One step is one small logical code unit, such as a file or bounded
+  section. Do not number every line.
+- Use headings such as
+  `Step: 14 — Add event ingestion request validation`.
+- Where safe, add an in-code comment such as
+  `// Step 14: Validate incoming event payloads.` Do not corrupt
+  JSON/YAML or other syntax to force comments into it.
+- Check `docs/BUILD_PROGRESS.md` and the last confirmed conversation
+  step before starting new work.
+- The ledger must record the last completed step and the next
+  available step. If uncertain, inspect or ask rather than guessing.
 
 ### Meaningful heavy comments
 
@@ -410,7 +413,7 @@ code; label future architecture as **proposed**.
 
 ### A. High-level architecture
 
-``` mermaid
+```mermaid
 flowchart TD
     Client[Client Service] --> Router[Gin Router]
     Router --> Middleware[Request ID / Logging / API Key]
